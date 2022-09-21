@@ -1,3 +1,5 @@
+import { getByDisplayValue } from "@testing-library/react";
+import { Root } from "react-dom/client";
 import { Action } from "redux";
 import { ThunkAction } from "redux-thunk";
 import { selectDateStart } from "./recorder";
@@ -160,6 +162,51 @@ export const deleteUserEvent =
     }
   };
 
+const UPDATE_REQUEST = "userEvents/update_request";
+
+interface UpdateRequestAction extends Action<typeof UPDATE_REQUEST> {}
+
+const UPDATE_SUCCESS = "userEvents/update_success";
+
+interface UpdateSuccessAction extends Action<typeof UPDATE_SUCCESS> {
+  payload: { event: UserEvent };
+}
+
+const UPDATE_FAILURE = "userEvents/update_failure";
+
+interface UpdateFailuretAction extends Action<typeof UPDATE_FAILURE> {}
+
+export const updateUserEvent =
+  (
+    event: UserEvent
+  ): ThunkAction<
+    Promise<void>,
+    RootState,
+    undefined,
+    UpdateRequestAction | UpdateSuccessAction | UpdateFailuretAction
+  > =>
+  async (dispatch) => {
+    dispatch({
+      type: UPDATE_REQUEST,
+    });
+    try {
+      const response = await fetch(`http://localhost:3001/events/${event.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(event),
+      });
+      const updatedEvent: UserEvent = await response.json();
+      dispatch({
+        type: UPDATE_SUCCESS,
+        payload: { event: updatedEvent },
+      });
+    } catch (e) {
+      dispatch({
+        type: UPDATE_FAILURE,
+      });
+    }
+  };
+
 const selectUserEventsState = (rootState: RootState) => rootState.userEvents;
 
 export const selectUserEventsArray = (rootState: RootState) => {
@@ -174,7 +221,11 @@ const initialState: UserEventsState = {
 
 export const userEventsReducer = (
   state: UserEventsState = initialState,
-  action: LoadSuccessAction | CreateSuccessAction | DeleteSuccessAction
+  action:
+    | LoadSuccessAction
+    | CreateSuccessAction
+    | DeleteSuccessAction
+    | UpdateSuccessAction
 ) => {
   switch (action.type) {
     case LOAD_SUCCESS:
@@ -206,6 +257,12 @@ export const userEventsReducer = (
       delete newState.byIds[id];
       return newState;
 
+    case UPDATE_SUCCESS:
+      const { event: updatedEvent } = action.payload;
+      return {
+        ...state,
+        byIds: { ...state.byIds, [updatedEvent.id]: updatedEvent },
+      };
     default:
       return state;
   }
