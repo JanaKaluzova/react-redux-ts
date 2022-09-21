@@ -9,11 +9,11 @@ import {
 } from "../../redux/user-events";
 import { addZero } from "../../lib/utils";
 
-export const mapState = (state: RootState) => ({
+const mapState = (state: RootState) => ({
   events: selectUserEventsArray(state),
 });
 
-export const mapDispatch = {
+const mapDispatch = {
   loadUserEvents,
 };
 
@@ -26,7 +26,7 @@ interface Props extends PropsFromRedux {}
 const createDayKey = (date: Date) => {
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth() + 1;
-  const day = date.getUTCDay();
+  const day = date.getUTCDate();
   return `${year}-${addZero(month)}-${addZero(day)}`;
 };
 
@@ -65,7 +65,7 @@ const Calendar: React.FC<Props> = ({ events, loadUserEvents }) => {
   if (events.length) {
     groupedEvents = groupEventsByDay(events);
     sortedGroupKeys = Object.keys(groupedEvents).sort(
-      (date1, date2) => +new Date(date1) - +new Date(date2)
+      (date1, date2) => +new Date(date2) - +new Date(date1)
     );
   }
   return groupedEvents && sortedGroupKeys ? (
